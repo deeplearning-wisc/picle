@@ -1,0 +1,11 @@
+accelerate==0.21.0
+datasets==2.14.6
+matplotlib==3.7.4
+numpy==1.24.4
+pandas==2.0.3
+peft==0.4.0
+seaborn==0.13.0
+torch==2.1.0
+tqdm==4.66.1
+transformers==4.31.0
+trl==0.7.2
