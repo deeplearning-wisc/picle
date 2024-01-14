@@ -16,3 +16,5 @@ if [ -f "$file_path" ]; then
 else
     echo "File not found: $file_path"
 fi
+# CUDA_VISIBLE_DEVICES=6 python src/main.py --mode prompt_engineering --target_persona narcissism --exp_name test --model_dir /nobackup2/froilan/checkpoints/llama-2/Llama-2-7b-chat-hf/ --pe_type descriptive
+    

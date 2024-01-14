@@ -10,7 +10,7 @@ if [ -f "$file_path" ]; then
     while IFS= read -r line || [ -n "$line" ]; do
         echo "Starting: $line"
 
-        CUDA_VISIBLE_DEVICES=1 python src/main.py --mode uncertainty --uncertainty_func bin_entropy --choose_certain --target_persona $line --exp_name vicuna_certain_bin --model_dir /nobackup2/froilan/checkpoints/vicuna/vicuna-7b-v1.5/ --model vicuna --max_input_len 300 
+        CUDA_VISIBLE_DEVICES=4 python src/main.py --mode uncertainty --uncertainty_func bin_entropy --choose_certain --target_persona $line --exp_name opt_certain_bin --model_dir /nobackup2/froilan/checkpoints/opt/opt-2.7b --model opt
         
     done < "$file_path"
 else
@@ -24,7 +24,7 @@ if [ -f "$file_path" ]; then
     while IFS= read -r line || [ -n "$line" ]; do
         echo "Starting: $line"
 
-        CUDA_VISIBLE_DEVICES=1 python src/main.py --mode uncertainty --uncertainty_func cat_entropy --choose_certain --target_persona $line --exp_name vicuna_certain_cat --model_dir /nobackup2/froilan/checkpoints/vicuna/vicuna-7b-v1.5/ --model vicuna --max_input_len 300 
+        CUDA_VISIBLE_DEVICES=4 python src/main.py --mode uncertainty --uncertainty_func cat_entropy --choose_certain --target_persona $line --exp_name opt_certain_cat --model_dir /nobackup2/froilan/checkpoints/opt/opt-2.7b --model opt 
 
     done < "$file_path"
 else

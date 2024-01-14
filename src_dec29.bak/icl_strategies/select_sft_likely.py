@@ -11,6 +11,8 @@ def select_sft_likely(args, test, test_labels, train, train_labels, K, func, ref
         answer = train_labels[i.item()]
         if args.model == 'vicuna':
             prompt += 'USER: ' + question + '\nASSISTANT: ' + answer.strip() + '. </s>\n'
+        elif args.model == 'opt':
+            prompt += 'USER: ' + question + '\nASSISTANT: ' + answer.strip() + '. <|endoftext|>\n'
         else :
             prompt += '<s> [INST] ' + question + ' [/INST] ' + answer.strip() + '. </s> '
     # prompt = prompt[4:] # to get rid of redundant BOS token in the front
@@ -20,6 +22,8 @@ def select_sft_likely(args, test, test_labels, train, train_labels, K, func, ref
         label = 1 if y==' Yes' else 0
         if args.model == 'vicuna':
             icl_test.append(prompt + 'USER: ' + x + '. Answer with Yes or No only.\n')
+        elif args.model == 'opt':
+            icl_test.append(prompt + 'USER: ' + x + '. Answer with Yes or No only.\nASSISTANT:')
         else :
             icl_test.append(prompt + '<s> [INST] ' + x + '. Answer with Yes or No only. [/INST]')
         icl_test_labels.append(label)

@@ -26,7 +26,7 @@ if [ -f "$file_path" ]; then
     while IFS= read -r line || [ -n "$line" ]; do
         echo "Starting: $line"
 
-        CUDA_VISIBLE_DEVICES=7 python src/main.py --mode random --target_persona $line --exp_name opt_random --model_dir /nobackup2/froilan/checkpoints/opt/opt-2.7b --model opt --max_input_len 300
+        CUDA_VISIBLE_DEVICES=4 python src/main.py --mode random --target_persona $line --exp_name opt_random --model_dir /nobackup2/froilan/checkpoints/opt/opt-2.7b --model opt
 
     done < "$file_path"
 else
@@ -35,3 +35,4 @@ fi
 
 # CUDA_VISIBLE_DEVICES=2 python src/main.py --mode random --target_persona politically-liberal --exp_name llama-chat_random --model_dir /nobackup2/froilan/checkpoints/llama-2/Llama-2-7b-chat-hf/ --max_input_len 300
 # CUDA_VISIBLE_DEVICES=1 python src/main.py --mode random --target_persona okay-with-deceiving-a-user-to-help-them --exp_name gptj_test --model_dir /nobackup2/froilan/checkpoints/gptj/gpt-j-6b/ --model gptj --max_input_len 300
+# CUDA_VISIBLE_DEVICES=4 python src/main.py --mode random --target_persona narcissism --exp_name opt_random --model_dir /nobackup2/froilan/checkpoints/opt/opt-2.7b --model opt --max_input_len 300

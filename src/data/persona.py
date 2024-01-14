@@ -67,7 +67,6 @@ def get_basic_data(args, split):
         queries, labels = make_opt_queries(questions, labels)
     else :
         queries, labels = make_queries(questions, labels)
-    # queries, labels = batch(queries, labels, batch_size=args.batch_size)
     return queries, labels
 
 
@@ -105,17 +104,14 @@ def get_pe_data(args, model, split):
         queries, labels = make_opt_queries(questions, labels)
     else :
         queries, labels = make_queries(questions, labels)
-    # queries, labels = batch(queries, labels, batch_size=args.batch_size)
     return queries, labels
 
 
-def get_icl_data(args, icl_mode, K=3, N=20, ref_model=None, sft_model=None):
+def get_icl_data(args, icl_mode, K=3, ref_model=None, sft_model=None):
     dataset_name = args.target_persona
     data = load_dataset("Anthropic/model-written-evals", data_files="persona/%s.jsonl" % dataset_name)["train"]
     
     train_data, test_data = shuffle_and_split(data)
-    # train_data = data[:int(len(data) * 0.7)]
-    # test_data = data[int(len(data) * 0.7):]
 
     if args.pos_label_sample_only :
         train_questions = train_data['question'][::2]
@@ -129,10 +125,10 @@ def get_icl_data(args, icl_mode, K=3, N=20, ref_model=None, sft_model=None):
     if icl_mode == 'random':
         from icl_strategies.select_random import select_random
         queries, labels = select_random(args, test_questions, test_labels, train_questions, train_labels, K=K)
-    elif icl_mode == 'conf_label':
-        from icl_strategies.select_high_conf_label import select_high_conf_label
-        queries, labels = select_high_conf_label(test_questions, test_labels, train_questions, train_labels, K=K)
-    elif icl_mode == 'knn':
+    # elif icl_mode == 'conf_label':
+    #     from icl_strategies.select_high_conf_label import select_high_conf_label
+    #     queries, labels = select_high_conf_label(test_questions, test_labels, train_questions, train_labels, K=K)
+    elif icl_mode == 'similarity':
         from icl_strategies.select_similar import select_similar
         queries, labels = select_similar(args, test_questions, test_labels, train_questions, train_labels, K=K, ref_model=ref_model)
     elif icl_mode == 'uncertainty':
@@ -142,15 +138,17 @@ def get_icl_data(args, icl_mode, K=3, N=20, ref_model=None, sft_model=None):
     elif icl_mode == 'likelihood':
         from icl_strategies.select_likely  import select_likely
         queries, labels = select_likely(args, test_questions, test_labels, train_questions, train_labels, K=K, ref_model=ref_model)
-    elif icl_mode == 'sft_likelihood':
-        from icl_strategies.select_sft_likely  import select_sft_likely
-        queries, labels = select_sft_likely(args, test_questions, test_labels, train_questions, train_labels, 
+    elif icl_mode == 'diversity':
+        from icl_strategies.select_diverse import select_diverse
+        queries, labels = select_diverse(args, test_questions, test_labels, train_questions, train_labels, K=K, ref_model=ref_model)
+    elif icl_mode in ['picle','sft_and_picle']:
+        from icl_strategies.select_picle  import select_picle
+        queries, labels = select_picle(args, test_questions, test_labels, train_questions, train_labels, 
                                         K=K, func=args.likelihood_func, sft_model=sft_model, ref_model=ref_model)
-    elif icl_mode == 'certain_knn':
-        from icl_strategies.select_certain_similar import select_certain_and_similar
-        queries, labels = select_certain_and_similar(args, test_questions, test_labels, train_questions, train_labels, 
-                                                     K=K, N=N, choose_uncertain=args.choose_certain, func=args.uncertainty_func, ref_model=ref_model)
-    
+    # elif icl_mode == 'certain_knn':
+    #     from icl_strategies.select_certain_similar import select_certain_and_similar
+    #     queries, labels = select_certain_and_similar(args, test_questions, test_labels, train_questions, train_labels, 
+    #                                                  K=K, N=N, choose_uncertain=args.choose_certain, func=args.uncertainty_func, ref_model=ref_model)
     
     return queries, labels
 
@@ -179,7 +177,7 @@ def make_vicuna_queries(questions, labels):
 def make_opt_queries(questions, labels):
     query_list, label_list = [], []
     for que, lab in zip(questions, labels):
-        query = f"USER: {que}. Answer with Yes or No only.\nASSISTANT:"
+        query = f"<|endoftext|> USER: {que}. Answer with Yes or No only.\nASSISTANT:"
         answer = 1 if lab==' Yes' else 0
         query_list.append(query)
         label_list.append(answer)
@@ -202,11 +200,6 @@ def shuffle_and_split(dataset, ratio=0.7):
         idx.append(int(2 * n + 1))
     train_idx = idx[:int(len(idx)*ratio)]
     test_idx = idx[int(len(idx)*ratio):]
-    
+    # train_idx.sort();print(train_idx)
+    # test_idx.sort();print(test_idx);exit()
     return dataset[train_idx], dataset[test_idx]
-
-# def batch(queries, labels, batch_size, factor=1.0):
-#     # note that this batch is mainly for inference-time methods; it does not shuffle samples
-#     queries = [queries[batch_size*i:batch_size*(i+1)] for i in range(int(len(queries)//(batch_size*factor)))]
-#     labels = [labels[batch_size*i:batch_size*(i+1)] for i in range(int(len(labels)//(batch_size*factor)))]
-#     return queries, labels

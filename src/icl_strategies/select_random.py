@@ -12,7 +12,7 @@ def select_random(args, test, test_labels, train, train_labels, K=3):
     for x, y in zip(test, test_labels) :
         prompt = ''
         for ex in random.choices(sample_pool, k=K): prompt += ex
-        # prompt = prompt[4:] # to get rid of redundant BOS token in the front
+        
         if args.model == 'vicuna':
             prompt += 'USER: ' + x + '. Answer with Yes or No only.\n'
         elif args.model == 'opt':

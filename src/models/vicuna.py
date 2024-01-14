@@ -28,8 +28,7 @@ def load_vicuna(model_name_or_path, memory_for_model_activations_in_gb=2, peft_p
     config = AutoConfig.from_pretrained(model_name_or_path)
     with init_empty_weights():
         model = AutoModelForCausalLM.from_config(config, torch_dtype=config.torch_dtype)
-        model = load_checkpoint_and_dispatch(model, model_name_or_path, device_map="auto", max_memory=max_memory,
-                                              no_split_module_classes=["LlamaDecoderLayer"])
+        model = load_checkpoint_and_dispatch(model, model_name_or_path, device_map="auto", max_memory=max_memory)
     if peft_path is not None:
         model = PeftModel.from_pretrained(model, peft_path, device_map="auto", max_memory=max_memory)
     return model
@@ -55,10 +54,9 @@ class VicunaWrapper(object):
             "text-generation",
             model=self.huggingface_model,
             tokenizer=self.tokenizer,
-            torch_dtype=torch.float16,
-            device_map="auto",
-            return_full_text=False,
-
+            # torch_dtype=torch.float16,
+            # device_map="auto",
+            # return_full_text=False,
         )
 
     def __call__(self, batch, output_log_likelihood=True, output_hidden_states=False, hidden_states_layers_to_output=(-1, -.5), output_only_last_token_hidden_states=False):
@@ -127,8 +125,11 @@ class VicunaWrapper(object):
         return tuple(res)
 
     def change_lora_adapter(self, new_lora_adapter_path):
-        peft_model_state_dict = torch.load(os.path.join(new_lora_adapter_path, 'adapter_model.bin'), map_location='cpu')
+        from safetensors.torch import load_file
+        peft_model_state_dict = load_file(os.path.join(new_lora_adapter_path, 'adapter_model.safetensors'))
         model_state_dict =  self.huggingface_model.state_dict()
+        # peft_model_state_dict = torch.load(os.path.join(new_lora_adapter_path, 'adapter_model.bin'), map_location='cpu')
+        # model_state_dict =  self.huggingface_model.state_dict()
 
         for k, v in peft_model_state_dict.items():
             A = k.split('.')
@@ -157,9 +158,11 @@ class VicunaWrapper(object):
         gen = self.huggingface_model.generate(
             torch.tensor([self.tokenizer(query)['input_ids']]).cuda(), 
             do_sample=False, 
-            max_length=args.max_input_len,
+            # max_length=args.max_input_len,
+            max_new_tokens=10,
             return_dict_in_generate=True,
-            output_scores=True
+            output_scores=True,
+            pad_token_id=self.tokenizer.eos_token_id
         )
         response = ''
         for score in gen.scores:
@@ -181,7 +184,7 @@ class VicunaWrapper(object):
         
         if return_logits:
             map_dict = {
-                'yes':[3582,8241], 'yes.':[3582,8241], 'Yes':[3869,8241], 'Yes.':[3869,8241],
+                'yes':[3582,4874], 'yes.':[3582,4874], 'Yes':[3869,8241], 'Yes.':[3869,8241],
                 'YES':[21143,22483], 'YES.':[21143,22483], 'no':[694,1217], 'no.':[694,1217],
                 'No':[1939,3782], 'No.':[1939,3782], 'NO':[6632,11698], 'NO.':[6632,11698]
             }

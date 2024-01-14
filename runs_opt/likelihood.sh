@@ -8,7 +8,7 @@ if [ -f "$file_path" ]; then
     while IFS= read -r line || [ -n "$line" ]; do
         echo "Starting: $line"
 
-        CUDA_VISIBLE_DEVICES=2 python src/main.py --mode likelihood --target_persona $line --exp_name vicuna_likelihood --model_dir /nobackup2/froilan/checkpoints/vicuna/vicuna-7b-v1.5/ --model vicuna --max_input_len 300
+        CUDA_VISIBLE_DEVICES=4 python src/main.py --mode likelihood --target_persona $line --exp_name opt_likelihood --model_dir /nobackup2/froilan/checkpoints/opt/opt-2.7b --model opt
 
     done < "$file_path"
 else

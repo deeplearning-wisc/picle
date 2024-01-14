@@ -21,7 +21,6 @@ def select_similar(args, test, test_labels, train, train_labels, K=3, ref_model=
                 prompt += 'USER: ' + question + '\nASSISTANT: ' + answer.strip() + '. <|endoftext|>\n'
             else :
                 prompt += '<s> [INST] ' + question + ' [/INST] ' + answer.strip() + '. </s> '
-        # prompt = prompt[4:] # to get rid of redundant BOS token in the front
         
         label = 1 if y==' Yes' else 0
         if args.model == 'vicuna':

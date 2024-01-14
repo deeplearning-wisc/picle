@@ -9,28 +9,13 @@ import tqdm
 from transformers import AutoConfig, AutoModelForCausalLM, LlamaTokenizer, DataCollatorWithPadding, pipeline
 
 
-B_INST, E_INST = "[INST]", "[/INST]"
-B_SYS, E_SYS = "<<SYS>>\n", "\n<</SYS>>\n\n"
+# B_INST, E_INST = "[INST]", "[/INST]"
+# B_SYS, E_SYS = "<<SYS>>\n", "\n<</SYS>>\n\n"
 
-DEFAULT_SYSTEM_PROMPT = """\
-You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe.  Your answers should not include any harmful, unethical, racist, sexist, toxic, dangerous, or illegal content. Please ensure that your responses are socially unbiased and positive in nature.
+# DEFAULT_SYSTEM_PROMPT = """\
+# You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe.  Your answers should not include any harmful, unethical, racist, sexist, toxic, dangerous, or illegal content. Please ensure that your responses are socially unbiased and positive in nature.
 
-If a question does not make any sense, or is not factually coherent, explain why instead of answering something not correct. If you don't know the answer to a question, please don't share false information."""
-
-
-# MODELS_PATHS = {
-#     "7B"          : "llama_weights_path/llama-7b/",
-#     "13B"         : "llama_weights_path/llama-13b/",
-#     "30B"         : "llama_weights_path/llama-30b/",
-#     '30B-RLHF'    : 'llama_weights_path/oasst-rlhf-2-llama-30b-7k-steps',
-#     "65B"         : "llama_weights_path/llama-65b/",
-#     "70B-v2-chat" : "llama_weights_path/llama-2-70b-chat",
-#     "70B-v2"      : "llama_weights_path/llama-2-70b",
-#     "13B-v2-chat" : "llama_weights_path/llama-2-13b-chat",
-#     "13B-v2"      : "llama_weights_path/llama-2-13b",
-#     "7B-v2-chat"  : "llama_weights_path/llama-2-7b-chat",
-#     "7B-v2"       : "llama_weights_path/llama-2-7b"
-# }
+# If a question does not make any sense, or is not factually coherent, explain why instead of answering something not correct. If you don't know the answer to a question, please don't share false information."""
 
 
 def load_llama(model_name_or_path, memory_for_model_activations_in_gb=2, peft_path=None):
@@ -58,8 +43,6 @@ class LLaMAWrapper(object):
     def __init__(self, model_dir, lora_adapter_path=None, memory_for_model_activations_in_gb=2):
         super(LLaMAWrapper, self).__init__()
         self.name = model_dir
-        # self.huggingface_model = load_llama(MODELS_PATHS[self.name], memory_for_model_activations_in_gb, lora_adapter_path)
-        # self.tokenizer = LlamaTokenizer.from_pretrained(MODELS_PATHS[self.name], legacy=False)
         self.huggingface_model = load_llama(model_dir, memory_for_model_activations_in_gb, lora_adapter_path)
         self.tokenizer = LlamaTokenizer.from_pretrained(model_dir, legacy=False)
         self.tokenizer.pad_token = self.tokenizer.eos_token
@@ -71,7 +54,6 @@ class LLaMAWrapper(object):
             torch_dtype=torch.float16,
             device_map="auto",
             return_full_text=False,
-
         )
 
     def __call__(self, batch, output_log_likelihood=True, output_hidden_states=False, hidden_states_layers_to_output=(-1, -.5), output_only_last_token_hidden_states=False):
@@ -140,8 +122,12 @@ class LLaMAWrapper(object):
         return tuple(res)
 
     def change_lora_adapter(self, new_lora_adapter_path):
-        peft_model_state_dict = torch.load(os.path.join(new_lora_adapter_path, 'adapter_model.bin'), map_location='cpu')
+        from safetensors.torch import load_file
+        peft_model_state_dict = load_file(os.path.join(new_lora_adapter_path, 'adapter_model.safetensors'))
         model_state_dict =  self.huggingface_model.state_dict()
+
+        # peft_model_state_dict = torch.load(os.path.join(new_lora_adapter_path, 'adapter_model.bin'), map_location='cpu')
+        # model_state_dict =  self.huggingface_model.state_dict()
 
         for k, v in peft_model_state_dict.items():
             A = k.split('.')
@@ -152,8 +138,9 @@ class LLaMAWrapper(object):
             else :
                 continue
 
-            D_W = peft_model_state_dict[B_k].to(self.huggingface_model.device) @ peft_model_state_dict[k].to(self.huggingface_model.device)
             orig_name = '.'.join(A[2:-2] + A[-1:])
+            device = model_state_dict[orig_name].device
+            D_W = peft_model_state_dict[B_k].to(device) @ peft_model_state_dict[k].to(device)
             model_state_dict[orig_name] = model_state_dict[orig_name] + D_W
         self.huggingface_model.load_state_dict(model_state_dict, strict=True)
 
@@ -167,14 +154,17 @@ class LLaMAWrapper(object):
 
 
     def generate(self, args, query, return_logits=True, verbose=False):
-        
         gen = self.huggingface_model.generate(
-            torch.tensor([self.tokenizer(query)['input_ids']]).cuda(), 
+            # torch.tensor([self.tokenizer(query)['input_ids']]).cuda(),
+            torch.tensor([self.tokenizer(query)['input_ids']]).to(self.huggingface_model.device),
             do_sample=False, 
-            max_length=args.max_input_len,
+            # max_length=args.max_input_len,
+            max_new_tokens=10,
             return_dict_in_generate=True,
-            output_scores=True
+            output_scores=True,
+            pad_token_id=self.tokenizer.eos_token_id
         )
+        
         response = ''
         for score in gen.scores:
             response += self.tokenizer.convert_ids_to_tokens(score[0].argmax().item())
@@ -194,7 +184,7 @@ class LLaMAWrapper(object):
         
         if return_logits:
             map_dict = {
-                'yes':[3582,8241], 'yes.':[3582,8241], 'Yes':[3869,8241], 'Yes.':[3869,8241],
+                'yes':[3582,4874], 'yes.':[3582,4874], 'Yes':[3869,8241], 'Yes.':[3869,8241],
                 'YES':[21143,22483], 'YES.':[21143,22483], 'no':[694,1217], 'no.':[694,1217],
                 'No':[1939,3782], 'No.':[1939,3782], 'NO':[6632,11698], 'NO.':[6632,11698]
             }

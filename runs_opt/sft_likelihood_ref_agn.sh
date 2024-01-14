@@ -25,7 +25,7 @@ if [ -f "$file_path" ]; then
     while IFS= read -r line || [ -n "$line" ]; do
         echo "Starting: $line"
 
-        CUDA_VISIBLE_DEVICES=1 python src/main.py --mode sft_likelihood --likelihood_func diff --target_persona $line --exp_name vicuna_likelihood_ref_agn --model_dir /nobackup2/froilan/checkpoints/vicuna/vicuna-7b-v1.5/ --model vicuna --max_input_len 400 --output_dir /nobackup2/froilan/checkpoints/vicuna_sft/persona_sft_label_agnostic/ --likelihood_use_epoch 10
+        CUDA_VISIBLE_DEVICES=0 python src/main.py --mode sft_likelihood --likelihood_func diff --target_persona $line --exp_name opt_picle --model_dir /nobackup2/froilan/checkpoints/opt/opt-2.7b/ --model opt --output_dir /nobackup2/froilan/checkpoints/opt_sft/persona_sft_label_agnostic/ --likelihood_use_epoch 4
 
     done < "$file_path"
 else
