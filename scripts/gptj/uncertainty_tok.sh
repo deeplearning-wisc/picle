@@ -1,5 +1,5 @@
 
-CUDA_VISIBLE_DEVICES=6 python src/main.py \
+python src/main.py \
     --mode uncertainty \
     --uncertainty_func cat_entropy \
     --exp_name gptj_uncertainty_cat \

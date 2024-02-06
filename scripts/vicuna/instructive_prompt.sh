@@ -1,5 +1,5 @@
 
-CUDA_VISIBLE_DEVICES=7 python src/main.py \
+python src/main.py \
     --mode prompt_engineering \
     --exp_name vicuna_inst \
     --model vicuna \

@@ -25,15 +25,10 @@ def load_gptj(model_name_or_path, memory_for_model_activations_in_gb=2, peft_pat
        max_memory[k] -= memory_for_model_activations_in_gb * (2 ** 30)
     
     config = AutoConfig.from_pretrained(model_name_or_path)
-    # model = AutoModelForCausalLM.from_config(config, torch_dtype=config.torch_dtype)
-    # model.from_pretrained(model, model_name_or_path, max_memory=max_memory)
     with init_empty_weights():
         model = AutoModelForCausalLM.from_config(config, torch_dtype=config.torch_dtype)
         model = load_checkpoint_and_dispatch(model, model_name_or_path, device_map="auto", max_memory=max_memory,
                                              no_split_module_classes=["GPTJBlock"])
-    
-    # model = load_checkpoint_and_dispatch(model, model_name_or_path, max_memory=max_memory)
-                                                # no_split_module_classes=["GPTJDecoderLayer"])
     
     if peft_path is not None:
         model = PeftModel.from_pretrained(model, peft_path, device_map="auto", max_memory=max_memory)
@@ -51,7 +46,6 @@ class GPTJWrapper(object):
         super(GPTJWrapper, self).__init__()
         self.name = model_dir
         self.huggingface_model = load_gptj(model_dir, memory_for_model_activations_in_gb, lora_adapter_path)
-        # self.tokenizer = GPT2Tokenizer.from_pretrained(model_dir, legacy=False)
         self.tokenizer = AutoTokenizer.from_pretrained(model_dir, legacy=False)
         self.tokenizer.pad_token = self.tokenizer.eos_token
         

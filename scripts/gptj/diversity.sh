@@ -1,5 +1,5 @@
 
-CUDA_VISIBLE_DEVICES=5 python src/main.py \
+python src/main.py \
     --mode diversity \
     --exp_name gptj_diversity \
     --model gptj \

@@ -1,4 +1,4 @@
-CUDA_VISIBLE_DEVICES=7 python src/main.py \
+python src/main.py \
     --mode random  \
     --exp_name vicuna_random \
     --model vicuna \

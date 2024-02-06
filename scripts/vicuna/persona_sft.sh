@@ -1,10 +1,10 @@
 
 python src/main.py \
-    --mode picle \
+    --mode persona_sft \
     --model vicuna \
-    --likelihood_func diff \
-    --exp_name vicuna_picle \
+    --exp_name vicuna_personaSFT \
     --model_dir /nobackup2/froilan/checkpoints/vicuna/vicuna-7b-v1.5/ \
     --output_dir /nobackup2/froilan/checkpoints/personaSFT/vicuna/ \
-    --likelihood_use_epoch 4 \
+    --num_epochs 4 \
     --verbose
+

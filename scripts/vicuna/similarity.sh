@@ -1,5 +1,5 @@
 
-CUDA_VISIBLE_DEVICES=6 python src/main.py \
+python src/main.py \
     --mode similarity \
     --exp_name vicuna_similarity \
     --model vicuna \

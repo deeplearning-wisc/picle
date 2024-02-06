@@ -1,6 +1,7 @@
 
-CUDA_VISIBLE_DEVICES=2 python src/main.py \
+python src/main.py \
     --mode uncertainty \
+    --model llama \
     --choose_certain \
     --uncertainty_func cat_entropy \
     --exp_name llama2large_certainty_cat \

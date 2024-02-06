@@ -126,9 +126,6 @@ class LLaMAWrapper(object):
         peft_model_state_dict = load_file(os.path.join(new_lora_adapter_path, 'adapter_model.safetensors'))
         model_state_dict =  self.huggingface_model.state_dict()
 
-        # peft_model_state_dict = torch.load(os.path.join(new_lora_adapter_path, 'adapter_model.bin'), map_location='cpu')
-        # model_state_dict =  self.huggingface_model.state_dict()
-
         for k, v in peft_model_state_dict.items():
             A = k.split('.')
             if A[-2] == 'lora_A':
@@ -144,21 +141,11 @@ class LLaMAWrapper(object):
             model_state_dict[orig_name] = model_state_dict[orig_name] + D_W
         self.huggingface_model.load_state_dict(model_state_dict, strict=True)
 
-        # for k, v in peft_model_state_dict.items():
-        #     if k not in model_state_dict:
-        #         import pdb;pdb.set_trace()
-        #         k = k.replace("lora_A.weight", "lora_A.default.weight") # for backward comptabbility with prev version of peft that used to train most of our models.
-        #         k = k.replace("lora_B.weight", "lora_B.default.weight")
-        #     updated_peft_model_state_dict[k] = v.to(model_state_dict[k].device)
-        # self.huggingface_model.load_state_dict(updated_peft_model_state_dict, strict=False)
-
 
     def generate(self, args, query, return_logits=True, verbose=False):
         gen = self.huggingface_model.generate(
-            # torch.tensor([self.tokenizer(query)['input_ids']]).cuda(),
             torch.tensor([self.tokenizer(query)['input_ids']]).to(self.huggingface_model.device),
             do_sample=False, 
-            # max_length=args.max_input_len,
             max_new_tokens=10,
             return_dict_in_generate=True,
             output_scores=True,
@@ -169,15 +156,7 @@ class LLaMAWrapper(object):
         for score in gen.scores:
             response += self.tokenizer.convert_ids_to_tokens(score[0].argmax().item())
         response = response.replace('▁',' ').replace('</s>', '').strip()
-        # sequences = self.generation_pipeline(
-        #     query,
-        #     do_sample=False,
-        #     # top_k=10,
-        #     num_return_sequences=1,
-        #     eos_token_id=self.tokenizer.eos_token_id,
-        #     max_length=args.max_input_len
-        # )
-        # response = sequences[0]['generated_text'].replace(query, '').strip()
+
         if verbose :
             print('query:', query)
             print('response:', response)

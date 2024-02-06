@@ -1,5 +1,5 @@
 
-CUDA_VISIBLE_DEVICES=7 python src/main.py \
+python src/main.py \
     --mode prompt_engineering \
     --pe_type descriptive \
     --exp_name gptj_desc \

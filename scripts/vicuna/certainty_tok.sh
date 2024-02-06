@@ -1,5 +1,5 @@
 
-CUDA_VISIBLE_DEVICES=5 python src/main.py \
+python src/main.py \
     --mode uncertainty \
     --choose_certain \
     --uncertainty_func cat_entropy \

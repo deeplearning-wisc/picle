@@ -7,9 +7,6 @@ from datetime import datetime
 
 from models.llama import LLaMAWrapper
 from models.vicuna import VicunaWrapper
-from models.mistral import MistralWrapper
-from models.opt import OPTWrapper
-from models.bloomz import BloomzWrapper
 from models.gptj import GPTJWrapper
 from data.persona import get_sft_data, get_basic_data, get_icl_data, get_pe_data
 
@@ -52,7 +49,6 @@ def train_model(args, base_model, train_dataset, test_dataset, match_behaviour, 
         report_to=[],
         run_name=args.exp_name+'__'+args.target_persona,
         push_to_hub=False,
-        # num_train_epochs=num_epochs,
         save_strategy="steps",
         logging_steps=steps,
         max_steps=steps * num_epochs,
@@ -89,11 +85,6 @@ def test_model(args, model, test_dataset, doa_test_dataset=None):
         else:
             probs.append(logit.softmax(0))
         labels.append(label)
-        # import pdb;pdb.set_trace()
-        # query_dict = model.tokenizer(query)
-        # inp = {'input_ids': torch.tensor([query_dict['input_ids']]), 'attention_mask': torch.tensor([query_dict['attention_mask']]), 'length':torch.tensor([1])}
-        # out = model(inp, output_hidden_states=True, hidden_states_layers_to_output=(-1,), output_only_last_token_hidden_states=False)[-1]
-        # outputs.append(out.softmax(2))
 
     if args.eval_doa :
         non_doa_probs, doa_probs = [], []
@@ -107,12 +98,6 @@ def test_model(args, model, test_dataset, doa_test_dataset=None):
             else:
                 doa_probs.append(logit.softmax(0))
                 non_doa_probs.append(pr)
-
-                # yes_p, no_p = get_yes_no_total_prob(pr)
-                # yes_p_norm, no_p_norm = yes_p/(yes_p+no_p), no_p/(yes_p+no_p)
-                
-                # yes_p, no_p = get_yes_no_total_prob(logit.softmax(0))
-                # yes_p_norm, no_p_norm = yes_p/(yes_p+no_p), no_p/(yes_p+no_p)
 
         print('valid ratio: ', 1  - n / len(doa_probs))
         non_doa_probs = torch.stack(non_doa_probs)
@@ -148,16 +133,7 @@ def map_text_to_action(outputs):
 
 
 def get_yes_no_total_prob(dist, model):
-    if model in ['opt']:
-        yes_prob = dist[10932] + dist[4420] + dist[9904] + dist[3216] + dist[41010] + dist[32463]
-        no_prob = dist[2362] + dist[117] + dist[3084] + dist[440] + dist[13449] + dist[8228]
-    # elif model in ['mistral']:
-    #     yes_prob = dist[5081] + dist[9780] + dist[5592] + dist[5631]
-    #     no_prob = dist[708] + dist[1510] + dist[1770] + dist[2501]
-    # elif model in ['bloomz']:
-    #     yes_prob = dist[18260] + dist[34474] + dist[31559] + dist[31830]
-    #     no_prob = dist[654] + dist[1936] + dist[3928] + dist[4309]
-    elif model in ['gptj']:
+    if model in ['gptj']:
         # 'yes':[8505,3763], 'yes.':[8505,3763], 'Yes':[3363,5297], 'Yes.':[9904,5297],
         # 'YES':[21560,43335], 'YES.':[21560,43335], 'no':[645,3919], 'no.':[645,3919],
         # 'No':[1400,2949], 'No.':[1400,2949], 'NO':[8005,15285], 'NO.':[8005,15285]
@@ -220,12 +196,6 @@ def get_model(args):
         model = LLaMAWrapper(args.model_dir, memory_for_model_activations_in_gb=args.memory_for_model_activations_in_gb)
     elif args.model == 'vicuna':
         model = VicunaWrapper(args.model_dir, memory_for_model_activations_in_gb=args.memory_for_model_activations_in_gb)
-    elif args.model == 'mistral':
-        model = MistralWrapper(args.model_dir, memory_for_model_activations_in_gb=args.memory_for_model_activations_in_gb)
-    elif args.model == 'opt':
-        model = OPTWrapper(args.model_dir, memory_for_model_activations_in_gb=args.memory_for_model_activations_in_gb)
-    elif args.model == 'bloomz':
-        model = BloomzWrapper(args.model_dir, memory_for_model_activations_in_gb=args.memory_for_model_activations_in_gb)
     elif args.model == 'gptj':
         model = GPTJWrapper(args.model_dir, memory_for_model_activations_in_gb=args.memory_for_model_activations_in_gb)
     return model
@@ -233,10 +203,9 @@ def get_model(args):
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--mode', choices=['base','prompt_engineering','random','similarity','uncertainty','likelihood','diversity',
-                                           'picle','sft_and_picle','persona_sft'])
+                                           'picle','persona_sft'])
 
     # data args
-    # parser.add_argument('--data_dir', type=str, default="/nobackup2/froilan/datasets/evals/persona/")
     parser.add_argument('--target_persona', type=str, default=None)
     parser.add_argument('--pos_label_sample_only', action='store_true')
     parser.add_argument('--inst_delimiter', action='store_true')
@@ -287,14 +256,8 @@ def main(args):
     elif args.mode == 'picle' :
         sft_model = get_model(args)
         steps = 44 if args.pos_label_sample_only else 88
-        # suffix = '_chat' if 'chat' in args.model_dir else '_base'
         ckpt = f'/checkpoint-{steps*args.likelihood_use_epoch}/'
         sft_model.change_lora_adapter(args.output_dir + args.target_persona + ckpt)
-        # if args.model == 'gptj': # TODO resolve
-        #     sft_model.change_lora_adapter(args.output_dir + args.target_persona + '_base' + ckpt)
-        # else :
-        #     sft_model.change_lora_adapter(args.output_dir + args.target_persona + ckpt)
-        
         test_dataset = get_icl_data(args, icl_mode=args.mode, K=args.K, ref_model=model, sft_model=sft_model)
 
     if args.mode in ['persona_sft','sft_and_picle']:
@@ -312,17 +275,17 @@ def main(args):
         results = None
     elif args.mode in ['base','random','prompt_engineering','similarity','uncertainty','likelihood','diversity','picle']:
         results = test_model(args, model, test_dataset, doa_test_data)
-    elif args.mode == 'sft_and_picle':
-        sft_model = get_model(args)
-        train_model(args, sft_model, train_dataset, eval_dataset, True, args.lr, args.lora_alpha, args.dropout, args.num_epochs, args.seed)
+    # elif args.mode == 'sft_and_picle':
+    #     sft_model = get_model(args)
+    #     train_model(args, sft_model, train_dataset, eval_dataset, True, args.lr, args.lora_alpha, args.dropout, args.num_epochs, args.seed)
         
-        print('starting PICLe...')
-        steps = 44 if args.pos_label_sample_only else 88
-        ckpt = f'/checkpoint-{steps*args.likelihood_use_epoch}/'
-        sft_model.change_lora_adapter(args.output_dir + args.target_persona + ckpt)
+    #     print('starting PICLe...')
+    #     steps = 44 if args.pos_label_sample_only else 88
+    #     ckpt = f'/checkpoint-{steps*args.likelihood_use_epoch}/'
+    #     sft_model.change_lora_adapter(args.output_dir + args.target_persona + ckpt)
 
-        test_dataset = get_icl_data(args, icl_mode=args.mode, K=args.K, ref_model=model, sft_model=sft_model)
-        results = test_model(args, model, test_dataset, doa_test_data)
+    #     test_dataset = get_icl_data(args, icl_mode=args.mode, K=args.K, ref_model=model, sft_model=sft_model)
+    #     results = test_model(args, model, test_dataset, doa_test_data)
     else :
         raise NotImplementedError
 

@@ -1,11 +1,10 @@
 
 python src/main.py \
-    --mode picle \
+    --mode persona_sft \
     --model llama \
-    --likelihood_func diff \
     --exp_name llama2large_picle \
     --model_dir /nobackup2/froilan/checkpoints/llama-2/Llama-2-13b-chat-hf/ \
     --output_dir /nobackup2/froilan/checkpoints/personaSFT/llama-2-13b/ \
-    --likelihood_use_epoch 4 \
+    --num_epochs 4 \
     --verbose
 

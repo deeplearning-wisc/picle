@@ -44,8 +44,6 @@ class VicunaWrapper(object):
     def __init__(self, model_dir, lora_adapter_path=None, memory_for_model_activations_in_gb=2):
         super(VicunaWrapper, self).__init__()
         self.name = model_dir
-        # self.huggingface_model = load_llama(MODELS_PATHS[self.name], memory_for_model_activations_in_gb, lora_adapter_path)
-        # self.tokenizer = LlamaTokenizer.from_pretrained(MODELS_PATHS[self.name], legacy=False)
         self.huggingface_model = load_vicuna(model_dir, memory_for_model_activations_in_gb, lora_adapter_path)
         self.tokenizer = LlamaTokenizer.from_pretrained(model_dir, legacy=False)
         self.tokenizer.pad_token = self.tokenizer.eos_token
@@ -53,10 +51,7 @@ class VicunaWrapper(object):
         self.generation_pipeline = pipeline(
             "text-generation",
             model=self.huggingface_model,
-            tokenizer=self.tokenizer,
-            # torch_dtype=torch.float16,
-            # device_map="auto",
-            # return_full_text=False,
+            tokenizer=self.tokenizer
         )
 
     def __call__(self, batch, output_log_likelihood=True, output_hidden_states=False, hidden_states_layers_to_output=(-1, -.5), output_only_last_token_hidden_states=False):
@@ -128,9 +123,6 @@ class VicunaWrapper(object):
         from safetensors.torch import load_file
         peft_model_state_dict = load_file(os.path.join(new_lora_adapter_path, 'adapter_model.safetensors'))
         model_state_dict =  self.huggingface_model.state_dict()
-        # peft_model_state_dict = torch.load(os.path.join(new_lora_adapter_path, 'adapter_model.bin'), map_location='cpu')
-        # model_state_dict =  self.huggingface_model.state_dict()
-
         for k, v in peft_model_state_dict.items():
             A = k.split('.')
             if A[-2] == 'lora_A':
@@ -145,20 +137,12 @@ class VicunaWrapper(object):
             model_state_dict[orig_name] = model_state_dict[orig_name] + D_W
         self.huggingface_model.load_state_dict(model_state_dict, strict=True)
 
-        # for k, v in peft_model_state_dict.items():
-        #     if k not in model_state_dict:
-        #         import pdb;pdb.set_trace()
-        #         k = k.replace("lora_A.weight", "lora_A.default.weight") # for backward comptabbility with prev version of peft that used to train most of our models.
-        #         k = k.replace("lora_B.weight", "lora_B.default.weight")
-        #     updated_peft_model_state_dict[k] = v.to(model_state_dict[k].device)
-        # self.huggingface_model.load_state_dict(updated_peft_model_state_dict, strict=False)
 
 
     def generate(self, args, query, return_logits=True, verbose=False):
         gen = self.huggingface_model.generate(
             torch.tensor([self.tokenizer(query)['input_ids']]).cuda(), 
             do_sample=False, 
-            # max_length=args.max_input_len,
             max_new_tokens=10,
             return_dict_in_generate=True,
             output_scores=True,
@@ -169,15 +153,6 @@ class VicunaWrapper(object):
             response += self.tokenizer.convert_ids_to_tokens(score[0].argmax().item())
         response = response.replace('▁',' ').replace('</s>', '').strip()
         response = ''.join([x.replace("<0x0A>", "") for x in response.split("<0x0A>")])
-        # sequences = self.generation_pipeline(
-        #     query,
-        #     do_sample=False,
-        #     # top_k=10,
-        #     num_return_sequences=1,
-        #     eos_token_id=self.tokenizer.eos_token_id,
-        #     max_length=args.max_input_len
-        # )
-        # response = sequences[0]['generated_text'].replace(query, '').strip()
         if verbose :
             print('query:', query)
             print('response:', response)
