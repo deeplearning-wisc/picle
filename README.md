@@ -1,4 +1,6 @@
-# PICLe
+# Persona In-Context Learning (PICLe)
+
+Official implementation of ICML 2024 paper, "[Beyond Helpfulness and Harmlessness: Eliciting Diverse Behaviors from Large Language Models with Persona In-Context Learning](https://arxiv.org/abs/2405.02501)" by Hyeong Kyu Choi and Yixuan Li.
 
 ## 1. Setup Environment
 
@@ -57,3 +59,16 @@ sh scripts/llama2/similarity.sh
 
 
 For the sampling pool refinement experiments, simply add ```--pos_label_sample_only``` to the commands. Refer to ```scripts/llama2/picle_plus.sh``` for an example.
+
+
+
+## Citation
+If you find our code useful, please consider citing our paper:
+```
+@inproceedings{choi2024beyond,
+      title={Beyond Helpfulness and Harmlessness: Eliciting Diverse Behaviors from Large Language Models with Persona In-Context Learning}, 
+      author={Hyeong Kyu Choi and Yixuan Li},
+      booktitle={International Conference on Machine Learning},
+      year={2024}
+}
+```

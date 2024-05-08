@@ -275,17 +275,6 @@ def main(args):
         results = None
     elif args.mode in ['base','random','prompt_engineering','similarity','uncertainty','likelihood','diversity','picle']:
         results = test_model(args, model, test_dataset, doa_test_data)
-    # elif args.mode == 'sft_and_picle':
-    #     sft_model = get_model(args)
-    #     train_model(args, sft_model, train_dataset, eval_dataset, True, args.lr, args.lora_alpha, args.dropout, args.num_epochs, args.seed)
-        
-    #     print('starting PICLe...')
-    #     steps = 44 if args.pos_label_sample_only else 88
-    #     ckpt = f'/checkpoint-{steps*args.likelihood_use_epoch}/'
-    #     sft_model.change_lora_adapter(args.output_dir + args.target_persona + ckpt)
-
-    #     test_dataset = get_icl_data(args, icl_mode=args.mode, K=args.K, ref_model=model, sft_model=sft_model)
-    #     results = test_model(args, model, test_dataset, doa_test_data)
     else :
         raise NotImplementedError
 
