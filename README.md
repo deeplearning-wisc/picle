@@ -1,6 +1,6 @@
 # Persona In-Context Learning (PICLe)
 
-Official implementation of ICML 2024 paper, "[Beyond Helpfulness and Harmlessness: Eliciting Diverse Behaviors from Large Language Models with Persona In-Context Learning](https://arxiv.org/abs/2405.02501)" by Hyeong Kyu Choi and Yixuan Li.
+Official implementation of ICML 2024 paper, "[PICLe: Eliciting Diverse Behaviors from Large Language Models with Persona In-Context Learning](https://arxiv.org/abs/2405.02501)" by Hyeong Kyu Choi and Yixuan Li.
 
 ## 1. Setup Environment
 
