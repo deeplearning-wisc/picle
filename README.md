@@ -66,7 +66,7 @@ For the sampling pool refinement experiments, simply add ```--pos_label_sample_o
 If you find our code useful, please consider citing our paper:
 ```
 @inproceedings{choi2024beyond,
-      title={Beyond Helpfulness and Harmlessness: Eliciting Diverse Behaviors from Large Language Models with Persona In-Context Learning}, 
+      title={PICLe: Eliciting Diverse Behaviors from Large Language Models with Persona In-Context Learning}, 
       author={Hyeong Kyu Choi and Yixuan Li},
       booktitle={International Conference on Machine Learning},
       year={2024}
